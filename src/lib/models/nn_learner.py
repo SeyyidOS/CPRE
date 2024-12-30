@@ -3,11 +3,13 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn as nn
 import torch
 import optuna
+import numpy as np
 
 
 class NNLearner:
@@ -135,6 +137,7 @@ class NNLearner:
         model.eval()
         total_loss = 0
         criterion = nn.MSELoss()
+        y_true, y_pred = [], []
         with torch.no_grad():
             for fen_input, move_input, target in tqdm(data_loader):
                 fen_input = fen_input.permute(0, 3, 1, 2).to(self.device)  # Change to NCHW format
@@ -143,8 +146,25 @@ class NNLearner:
                 outputs = model(fen_input, move_input)
                 loss = criterion(outputs, target)
                 total_loss += loss.item()
+
+                y_true.extend(target.cpu().numpy())
+                y_pred.extend(outputs.cpu().numpy())
+
+        self.y_true = np.array(y_true)
+        self.y_pred = np.array(y_pred)
+        print(total_loss / len(data_loader))
         return total_loss / len(data_loader)
 
+    def plot_predictions_histogram(self, bins=30, title="Ground Truth vs Predictions Histogram"):
+        plt.figure(figsize=(10, 6))
+        plt.hist(self.y_true, bins=bins, alpha=0.5, label="Ground Truth", color="blue")
+        plt.hist(self.y_pred, bins=bins, alpha=0.5, label="Predictions", color="orange")
+        plt.xlabel("Values")
+        plt.ylabel("Frequency")
+        plt.title(title)
+        plt.legend(loc="upper right")
+        plt.grid(True)
+        plt.show()
 
 
 class ChessPuzzleRatingModel(nn.Module):

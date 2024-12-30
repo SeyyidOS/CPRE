@@ -1,6 +1,7 @@
 from torch.utils.tensorboard.writer import SummaryWriter
 from sklearn.metrics import mean_squared_error
 
+import matplotlib.pyplot as plt
 import lightgbm as lgb
 import optuna 
 
@@ -93,3 +94,22 @@ class LightGBMLearner:
 
         self.params.update(study.best_params)
         return study.best_params
+
+
+    def plot_predictions_histogram(self, y_true, y_pred, bins=30, title="Ground Truth vs Predictions Histogram"):
+        plt.figure(figsize=(10, 6))
+        plt.hist(y_true, bins=bins, alpha=0.5, label="Ground Truth", color="blue")
+        plt.hist(y_pred, bins=bins, alpha=0.5, label="Predictions", color="orange")
+        plt.xlabel("Values")
+        plt.ylabel("Frequency")
+        plt.title(title)
+        plt.legend(loc="upper right")
+        plt.grid(True)
+        plt.show()
+
+    def plot_validation_histogram(self, X_val, y_val):
+        if self.model is None:
+            raise ValueError("The model has not been trained yet.")
+
+        y_pred = self.predict(X_val)
+        self.plot_predictions_histogram(y_val, y_pred, title="Validation: Ground Truth vs Predictions")
